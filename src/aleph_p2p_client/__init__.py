@@ -1,4 +1,5 @@
 import sys
+from .client import AlephP2PServiceClient, make_p2p_service_client
 
 if sys.version_info[:2] >= (3, 8):
     # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
@@ -8,7 +9,7 @@ else:
 
 try:
     # Change here if project is renamed and does not equal the package name
-    dist_name = "p2p-service-client-python"
+    dist_name = "aleph-p2p-client"
     __version__ = version(dist_name)
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "unknown"

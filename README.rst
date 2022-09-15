@@ -29,15 +29,16 @@
 
 |
 
-=========================
-p2p-service-client-python
-=========================
+================
+Aleph P2P client
+================
 
 
-    Add a short description here!
+    A Python client for the Aleph.im P2P service.
 
 
-A longer description of your project goes here...
+Aleph.im nodes use a dedicated service for P2P communication.
+This package enables users to interact with this service from Python applications.
 
 
 .. _pyscaffold-notes:

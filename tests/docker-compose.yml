@@ -1,0 +1,66 @@
+version: '2.2'
+
+services:
+  # Use a single instance of RabbitMQ out of simplicity.
+  rabbitmq:
+    container_name: p2p-client-tests-rabbitmq
+    restart: always
+    image: rabbitmq:3.10.7-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    networks:
+      - p2p-service-tests
+
+  p2p-service-1:
+    container_name: p2p-client-tests-service-1
+    restart: always
+    image: odesenfans/aleph-p2p-service:latest
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./configs/test-config-1.yml:/etc/p2p-service/config.yml
+      - ./configs/test-key-1.bin:/etc/p2p-service/node-secret.pkcs8.der
+    environment:
+      RUST_BACKTRACE: 1
+      RUST_LOG: info
+    ports:
+      - "4025:4025"
+      - "4030:4030"
+    command:
+      - "--config"
+      - "/etc/p2p-service/config.yml"
+      - "--private-key-file"
+      - "/etc/p2p-service/node-secret.pkcs8.der"
+    networks:
+      - p2p-service-tests
+
+  p2p-service-2:
+    container_name: p2p-client-tests-service-2
+    restart: always
+    image: odesenfans/aleph-p2p-service:latest
+    depends_on:
+      - rabbitmq
+      - p2p-service-1
+    volumes:
+      - ./configs/test-config-2.yml:/etc/p2p-service/config.yml
+      - ./configs/test-key-2.bin:/etc/p2p-service/node-secret.pkcs8.der
+    environment:
+      RUST_BACKTRACE: 1
+      RUST_LOG: info
+    ports:
+      - "40250:40250"
+      - "40300:40300"
+    command:
+      - "--config"
+      - "/etc/p2p-service/config.yml"
+      - "--private-key-file"
+      - "/etc/p2p-service/node-secret.pkcs8.der"
+    networks:
+      - p2p-service-tests
+
+networks:
+  p2p-service-tests:

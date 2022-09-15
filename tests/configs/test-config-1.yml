@@ -1,0 +1,10 @@
+p2p:
+  topics:
+    - test-topic-1
+    - test-topic-2
+  peers: []
+
+rabbitmq:
+  host: "rabbitmq"
+  pub_exchange: "p2p-publish-1"
+  sub_exchange: "p2p-subscribe-1"
