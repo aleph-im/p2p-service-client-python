@@ -1,5 +1,5 @@
 """
-    Dummy conftest.py for p2p_service_client_python.
+    Dummy conftest.py for aleph_p2p_client.
 
     If you don't know what this is for, just leave it empty.
     Read more about conftest.py under:

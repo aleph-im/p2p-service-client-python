@@ -1,7 +1,7 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-source = p2p_service_client_python
+source = aleph_p2p_client
 # omit = bad_file.py
 
 [paths]

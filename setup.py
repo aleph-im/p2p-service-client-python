@@ -1,5 +1,5 @@
 """
-    Setup file for p2p-service-client-python.
+    Setup file for aleph-p2p-client.
     Use setup.cfg to configure your project.
 
     This file was generated with PyScaffold 4.3.
