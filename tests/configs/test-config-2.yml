@@ -9,5 +9,6 @@ p2p:
 
 rabbitmq:
   host: "rabbitmq"
+  port: 5672
   pub_exchange: "p2p-publish-2"
   sub_exchange: "p2p-subscribe-2"
