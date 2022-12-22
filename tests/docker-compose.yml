@@ -18,7 +18,7 @@ services:
   p2p-service-1:
     container_name: p2p-client-tests-service-1
     restart: always
-    image: odesenfans/aleph-p2p-service:latest
+    image: alephim/p2p-service:latest
     depends_on:
       - rabbitmq
     volumes:
@@ -41,7 +41,7 @@ services:
   p2p-service-2:
     container_name: p2p-client-tests-service-2
     restart: always
-    image: odesenfans/aleph-p2p-service:latest
+    image: alephim/p2p-service:latest
     depends_on:
       - rabbitmq
       - p2p-service-1
