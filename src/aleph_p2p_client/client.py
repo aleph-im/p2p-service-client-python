@@ -1,12 +1,15 @@
+from dataclasses import dataclass
 from typing import AsyncIterator, Dict
 
 import aio_pika
 import aiohttp
 
 from .defaults import *
-from .exceptions import P2PClientException, DialFailedException, DialWrongPeerException
-
-from dataclasses import dataclass
+from .exceptions import (
+    DialFailedException,
+    DialWrongPeerException,
+    InternalServiceException,
+)
 
 
 @dataclass
@@ -18,12 +21,14 @@ class AlephP2PMessageQueueClient:
     def __init__(
         self,
         service_name: str,
+        peer_id: str,
         connection: aio_pika.abc.AbstractConnection,
         channel: aio_pika.abc.AbstractChannel,
         pub_exchange: aio_pika.abc.AbstractExchange,
         sub_exchange: aio_pika.abc.AbstractExchange,
     ):
         self.service_name = service_name
+        self.peer_id = peer_id
         self.connection = connection
         self.channel = channel
         self.pub_exchange = pub_exchange
@@ -34,9 +39,14 @@ class AlephP2PMessageQueueClient:
     async def close(self):
         await self.connection.close()
 
-    async def publish(self, data: bytes, topic: str):
+    async def publish(self, data: bytes, topic: str, loopback: bool = False):
         message = aio_pika.Message(body=data)
         await self.pub_exchange.publish(message, routing_key=topic)
+
+        if loopback:
+            await self.sub_exchange.publish(
+                message, routing_key=f"p2p.{topic}.{self.peer_id}"
+            )
 
     async def subscribe(self, topic: str):
         if topic in self.subscriptions:
@@ -90,10 +100,8 @@ class AlephP2PHttpClient:
 
         raise InternalServiceException(await response.text())
 
-        response.raise_for_status()
-
     async def close(self):
-        await self.http_client.close()
+        await self.http_session.close()
 
 
 class AlephP2PServiceClient:
@@ -137,8 +145,8 @@ class AlephP2PServiceClient:
     async def dial(self, peer_id: str, multiaddr: str):
         return await self.http_client.dial(peer_id=peer_id, multiaddr=multiaddr)
 
-    async def publish(self, data: bytes, topic: str):
-        await self.mq_client.publish(data, topic)
+    async def publish(self, data: bytes, topic: str, loopback: bool = False):
+        await self.mq_client.publish(data=data, topic=topic, loopback=loopback)
 
     async def subscribe(self, topic: str):
         await self.mq_client.subscribe(topic)
@@ -153,6 +161,7 @@ class AlephP2PServiceClient:
 
 async def declare_mq_objects(
     service_name: str,
+    peer_id: str,
     mq_host: str,
     mq_port: int,
     mq_username: str,
@@ -174,6 +183,7 @@ async def declare_mq_objects(
 
     return AlephP2PMessageQueueClient(
         service_name=service_name,
+        peer_id=peer_id,
         connection=connection,
         channel=channel,
         pub_exchange=pub_exchange,
@@ -193,8 +203,14 @@ async def make_p2p_service_client(
     http_port: int = DEFAULT_HTTP_PORT,
 ) -> AlephP2PServiceClient:
 
+    http_session = aiohttp.ClientSession(base_url=f"http://{http_host}:{http_port}/")
+    http_client = AlephP2PHttpClient(http_session=http_session)
+
+    peer_id = (await http_client.identify()).peer_id
+
     mq_client = await declare_mq_objects(
         service_name=service_name,
+        peer_id=peer_id,
         mq_host=mq_host,
         mq_port=mq_port,
         mq_username=mq_username,
@@ -202,8 +218,5 @@ async def make_p2p_service_client(
         mq_pub_exchange_name=mq_pub_exchange_name,
         mq_sub_exchange_name=mq_sub_exchange_name,
     )
-
-    http_session = aiohttp.ClientSession(base_url=f"http://{http_host}:{http_port}/")
-    http_client = AlephP2PHttpClient(http_session=http_session)
 
     return AlephP2PServiceClient(mq_client=mq_client, http_client=http_client)

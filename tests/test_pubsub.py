@@ -38,15 +38,48 @@ async def test_pubsub(sender: int, topic: str):
             await p2p_client1.subscribe(topic)
             await p2p_client2.subscribe(topic)
 
-        # Note: we use a datetime in the message because gossipsub will not send duplicate
-        # messages. This allows to run the test several times in a row.
+            # Note: we use a datetime in the message because gossipsub will not send duplicate
+            # messages. This allows to run the test several times in a row.
+            tx_message = f"Date and time: {dt.datetime.now()}"
+            await sender.publish(data=tx_message.encode("utf-8"), topic=topic)
+            rx_message = await asyncio.wait_for(
+                receiver.receive_messages(topic).__anext__(), timeout=3.0
+            )
+
+            # Ack the message as we call the iterator with __anext__
+            await rx_message.ack()
+
+            assert rx_message.body.decode("utf-8") == tx_message
+
+
+@pytest.mark.asyncio
+async def test_pubsub_loopback():
+    p2p_client1 = await make_client_from_config(
+        "test-config-1.yml", service_name="pubsub1"
+    )
+    p2p_client2 = await make_client_from_config(
+        "test-config-2.yml", service_name="pubsub2"
+    )
+
+    sender, receiver = p2p_client1, p2p_client2
+    topic = "test-topic-loopback"
+    async with sender, receiver:
+        await sender.subscribe(topic)
+        await receiver.subscribe(topic)
+
         tx_message = f"Date and time: {dt.datetime.now()}"
-        await sender.publish(data=tx_message.encode("utf-8"), topic=topic)
-        rx_message = await asyncio.wait_for(
-            receiver.receive_messages(topic).__anext__(), timeout=3.0
+        await sender.publish(
+            data=tx_message.encode("utf-8"), topic=topic, loopback=True
         )
 
-        # Ack the message as we call the iterator with __anext__
-        await rx_message.ack()
+        rx_message_receiver = await asyncio.wait_for(
+            receiver.receive_messages(topic).__anext__(), timeout=3.0
+        )
+        await rx_message_receiver.ack()
+        assert rx_message_receiver.body.decode("utf-8") == tx_message
 
-        assert rx_message.body.decode("utf-8") == tx_message
+        rx_message_sender = await asyncio.wait_for(
+            sender.receive_messages(topic).__anext__(), timeout=3.0
+        )
+        await rx_message_sender.ack()
+        assert rx_message_sender.body.decode("utf-8") == tx_message
