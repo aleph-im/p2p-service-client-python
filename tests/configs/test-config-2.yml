@@ -4,6 +4,7 @@ p2p:
   topics:
     - test-topic-1
     - test-topic-2
+    - test-topic-loopback
   peers:
     - "/dns/p2p-service-1/tcp/4025/p2p/QmTXr8ecVWn8DMdDxQktL3YgNrVh7hp33CTMGhN1sqmwRp"
 
