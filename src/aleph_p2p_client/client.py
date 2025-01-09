@@ -70,7 +70,8 @@ class AlephP2PMessageQueueClient:
         async with sub_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 yield message
-                await message.ack()
+                if not message.processed:
+                    await message.ack()
 
 
 class AlephP2PHttpClient:
