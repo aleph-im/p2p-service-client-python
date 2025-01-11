@@ -70,6 +70,8 @@ class AlephP2PMessageQueueClient:
         async with sub_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 yield message
+                # This condition prevents double ACK issues given by aiopika and rabbitmq if a lot of messages
+                # are received
                 if not message.processed:
                     await message.ack()
 
