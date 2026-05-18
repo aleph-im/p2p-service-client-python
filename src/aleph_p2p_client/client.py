@@ -140,7 +140,10 @@ class AlephP2PServiceClient:
         await self.close()
 
     async def close(self):
-        await self.mq_client.close()
+        try:
+            await self.mq_client.close()
+        finally:
+            await self.http_client.close()
 
     async def identify(self) -> NodeId:
         return await self.http_client.identify()
@@ -175,14 +178,18 @@ async def declare_mq_objects(
     connection = await aio_pika.connect_robust(
         host=mq_host, port=mq_port, login=mq_username, password=mq_password
     )
-    channel = await connection.channel()
-    pub_exchange = await channel.declare_exchange(
-        name=mq_pub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
-    )
+    try:
+        channel = await connection.channel()
+        pub_exchange = await channel.declare_exchange(
+            name=mq_pub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
+        )
 
-    sub_exchange = await channel.declare_exchange(
-        name=mq_sub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
-    )
+        sub_exchange = await channel.declare_exchange(
+            name=mq_sub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
+        )
+    except BaseException:
+        await connection.close()
+        raise
 
     return AlephP2PMessageQueueClient(
         service_name=service_name,
@@ -209,17 +216,21 @@ async def make_p2p_service_client(
     http_session = aiohttp.ClientSession(base_url=f"http://{http_host}:{http_port}/")
     http_client = AlephP2PHttpClient(http_session=http_session)
 
-    peer_id = (await http_client.identify()).peer_id
+    try:
+        peer_id = (await http_client.identify()).peer_id
 
-    mq_client = await declare_mq_objects(
-        service_name=service_name,
-        peer_id=peer_id,
-        mq_host=mq_host,
-        mq_port=mq_port,
-        mq_username=mq_username,
-        mq_password=mq_password,
-        mq_pub_exchange_name=mq_pub_exchange_name,
-        mq_sub_exchange_name=mq_sub_exchange_name,
-    )
+        mq_client = await declare_mq_objects(
+            service_name=service_name,
+            peer_id=peer_id,
+            mq_host=mq_host,
+            mq_port=mq_port,
+            mq_username=mq_username,
+            mq_password=mq_password,
+            mq_pub_exchange_name=mq_pub_exchange_name,
+            mq_sub_exchange_name=mq_sub_exchange_name,
+        )
+    except BaseException:
+        await http_client.close()
+        raise
 
     return AlephP2PServiceClient(mq_client=mq_client, http_client=http_client)
