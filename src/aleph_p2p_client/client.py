@@ -4,7 +4,14 @@ from typing import AsyncIterator, Dict
 import aio_pika
 import aiohttp
 
-from .defaults import *
+from .defaults import (
+    DEFAULT_HTTP_HOST,
+    DEFAULT_HTTP_PORT,
+    DEFAULT_MQ_HOST,
+    DEFAULT_MQ_PORT,
+    DEFAULT_PUB_EXCHANGE_NAME,
+    DEFAULT_SUB_EXCHANGE_NAME,
+)
 from .exceptions import (
     DialFailedException,
     DialWrongPeerException,
@@ -70,8 +77,8 @@ class AlephP2PMessageQueueClient:
         async with sub_queue.iterator() as queue_iter:
             async for message in queue_iter:
                 yield message
-                # This condition prevents double ACK issues given by aiopika and rabbitmq if a lot of messages
-                # are received
+                # This condition prevents double ACK issues given by aiopika
+                # and rabbitmq if a lot of messages are received
                 if not message.processed:
                     await message.ack()
 
@@ -96,7 +103,8 @@ class AlephP2PHttpClient:
             return
         if response.status == 403:
             raise DialWrongPeerException(
-                f"Wrong peer: peer ID '{peer_id}' is not associated to multiaddr '{multiaddr}'"
+                f"Wrong peer: peer ID '{peer_id}' is not associated"
+                f" to multiaddr '{multiaddr}'"
             )
         elif response.status == 404:
             raise DialFailedException("Could not reach peer")
@@ -181,11 +189,15 @@ async def declare_mq_objects(
     try:
         channel = await connection.channel()
         pub_exchange = await channel.declare_exchange(
-            name=mq_pub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
+            name=mq_pub_exchange_name,
+            type=aio_pika.ExchangeType.TOPIC,
+            auto_delete=False,
         )
 
         sub_exchange = await channel.declare_exchange(
-            name=mq_sub_exchange_name, type=aio_pika.ExchangeType.TOPIC, auto_delete=False
+            name=mq_sub_exchange_name,
+            type=aio_pika.ExchangeType.TOPIC,
+            auto_delete=False,
         )
     except BaseException:
         await connection.close()

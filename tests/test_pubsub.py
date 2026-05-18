@@ -38,8 +38,8 @@ async def test_pubsub(sender: int, topic: str):
             await p2p_client1.subscribe(topic)
             await p2p_client2.subscribe(topic)
 
-            # Note: we use a datetime in the message because gossipsub will not send duplicate
-            # messages. This allows to run the test several times in a row.
+            # Note: we use a datetime in the message because gossipsub will not send
+            # duplicate messages. This allows to run the test several times in a row.
             tx_message = f"Date and time: {dt.datetime.now()}"
             await sender.publish(data=tx_message.encode("utf-8"), topic=topic)
             rx_message = await asyncio.wait_for(

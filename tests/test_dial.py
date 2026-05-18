@@ -43,7 +43,7 @@ async def test_dial_self():
 @pytest.mark.asyncio
 async def test_dial_with_wrong_peer_id():
     peer_id = "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
-    multiaddr = f"/dns/p2p-service-1/tcp/4025"
+    multiaddr = "/dns/p2p-service-1/tcp/4025"
 
     p2p_client = await make_client_from_config(
         "test-config-2.yml", service_name="dial-wrong-peer"
@@ -56,7 +56,7 @@ async def test_dial_with_wrong_peer_id():
 @pytest.mark.asyncio
 async def test_dial_nonexistent_peer():
     peer_id = "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
-    multiaddr = f"/ip4/127.0.0.1/tcp/5000"
+    multiaddr = "/ip4/127.0.0.1/tcp/5000"
 
     p2p_client = await make_client_from_config(
         "test-config-2.yml", service_name="dial-nonexistent-peer"

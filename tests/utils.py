@@ -2,7 +2,12 @@ from pathlib import Path
 
 import yaml
 from aleph_p2p_client import AlephP2PServiceClient, make_p2p_service_client
-from aleph_p2p_client.defaults import *
+from aleph_p2p_client.defaults import (
+    DEFAULT_HTTP_PORT,
+    DEFAULT_MQ_PORT,
+    DEFAULT_PUB_EXCHANGE_NAME,
+    DEFAULT_SUB_EXCHANGE_NAME,
+)
 
 PEER_ID_SERVICE_1 = "QmTXr8ecVWn8DMdDxQktL3YgNrVh7hp33CTMGhN1sqmwRp"
 PEER_ID_SERVICE_2 = "QmRCDLs8BX6vD46SzsACrDc7sc9pTGTo2RhDzAB68YMzWo"
@@ -24,8 +29,8 @@ async def make_client_from_config(
 
     return await make_p2p_service_client(
         service_name=service_name,
-        # The MQ is only reachable through localhost. The hostname in config files uses the Docker
-        # network DNS, which is unavailable out of Docker.
+        # The MQ is only reachable through localhost. The hostname in config files
+        # uses the Docker network DNS, which is unavailable out of Docker.
         mq_host="localhost",
         mq_port=rmq.get("port", DEFAULT_MQ_PORT),
         mq_username=rmq.get("username", "guest"),
