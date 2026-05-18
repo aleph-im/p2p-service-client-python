@@ -196,10 +196,10 @@ async def declare_mq_objects(
 
 async def make_p2p_service_client(
     service_name: str,
+    mq_username: str,
+    mq_password: str,
     mq_host: str = DEFAULT_MQ_HOST,
     mq_port: int = DEFAULT_MQ_PORT,
-    mq_username: str = DEFAULT_MQ_USERNAME,
-    mq_password: str = DEFAULT_MQ_PASSWORD,
     mq_pub_exchange_name: str = DEFAULT_PUB_EXCHANGE_NAME,
     mq_sub_exchange_name: str = DEFAULT_SUB_EXCHANGE_NAME,
     http_host: str = DEFAULT_HTTP_HOST,
