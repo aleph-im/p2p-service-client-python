@@ -223,9 +223,13 @@ async def make_p2p_service_client(
     mq_sub_exchange_name: str = DEFAULT_SUB_EXCHANGE_NAME,
     http_host: str = DEFAULT_HTTP_HOST,
     http_port: int = DEFAULT_HTTP_PORT,
+    http_timeout: float = 30.0,
 ) -> AlephP2PServiceClient:
 
-    http_session = aiohttp.ClientSession(base_url=f"http://{http_host}:{http_port}/")
+    http_session = aiohttp.ClientSession(
+        base_url=f"http://{http_host}:{http_port}/",
+        timeout=aiohttp.ClientTimeout(total=http_timeout),
+    )
     http_client = AlephP2PHttpClient(http_session=http_session)
 
     try:
