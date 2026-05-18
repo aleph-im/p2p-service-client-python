@@ -1,5 +1,6 @@
+import ssl
 from dataclasses import dataclass
-from typing import AsyncIterator, Dict
+from typing import Any, AsyncIterator, Dict, Optional
 
 import aio_pika
 import aiohttp
@@ -182,9 +183,16 @@ async def declare_mq_objects(
     mq_password: str,
     mq_pub_exchange_name: str,
     mq_sub_exchange_name: str,
+    mq_use_tls: bool = False,
+    mq_ssl_options: Optional[Dict[str, Any]] = None,
 ):
     connection = await aio_pika.connect_robust(
-        host=mq_host, port=mq_port, login=mq_username, password=mq_password
+        host=mq_host,
+        port=mq_port,
+        login=mq_username,
+        password=mq_password,
+        ssl=mq_use_tls,
+        ssl_options=mq_ssl_options,
     )
     try:
         channel = await connection.channel()
@@ -221,15 +229,30 @@ async def make_p2p_service_client(
     mq_port: int = DEFAULT_MQ_PORT,
     mq_pub_exchange_name: str = DEFAULT_PUB_EXCHANGE_NAME,
     mq_sub_exchange_name: str = DEFAULT_SUB_EXCHANGE_NAME,
+    mq_use_tls: bool = False,
+    mq_ssl_options: Optional[Dict[str, Any]] = None,
     http_host: str = DEFAULT_HTTP_HOST,
     http_port: int = DEFAULT_HTTP_PORT,
     http_timeout: float = 30.0,
+    http_use_tls: bool = False,
+    http_ssl_context: Optional[ssl.SSLContext] = None,
 ) -> AlephP2PServiceClient:
 
-    http_session = aiohttp.ClientSession(
-        base_url=f"http://{http_host}:{http_port}/",
-        timeout=aiohttp.ClientTimeout(total=http_timeout),
-    )
+    if http_use_tls:
+        http_scheme = "https"
+        connector = aiohttp.TCPConnector(
+            ssl=http_ssl_context if http_ssl_context is not None else True
+        )
+        http_session = aiohttp.ClientSession(
+            base_url=f"{http_scheme}://{http_host}:{http_port}/",
+            connector=connector,
+            timeout=aiohttp.ClientTimeout(total=http_timeout),
+        )
+    else:
+        http_session = aiohttp.ClientSession(
+            base_url=f"http://{http_host}:{http_port}/",
+            timeout=aiohttp.ClientTimeout(total=http_timeout),
+        )
     http_client = AlephP2PHttpClient(http_session=http_session)
 
     try:
@@ -244,6 +267,8 @@ async def make_p2p_service_client(
             mq_password=mq_password,
             mq_pub_exchange_name=mq_pub_exchange_name,
             mq_sub_exchange_name=mq_sub_exchange_name,
+            mq_use_tls=mq_use_tls,
+            mq_ssl_options=mq_ssl_options,
         )
     except BaseException:
         await http_client.close()
