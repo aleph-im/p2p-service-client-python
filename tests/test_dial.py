@@ -29,7 +29,12 @@ async def test_dial_self():
         "test-config-1.yml", service_name="dial-self"
     )
     async with p2p_client:
-        with pytest.raises(DialWrongPeerException):
+        # The p2p-service returns HTTP 404 ("not found") for self-dial, the same
+        # status it uses for any unreachable peer. There is no discriminating
+        # information in the response to distinguish a self-dial from a genuine
+        # connection failure, so the client raises DialFailedException here rather
+        # than DialWrongPeerException.
+        with pytest.raises(DialFailedException):
             await p2p_client.dial(
                 peer_id=PEER_ID_SERVICE_1, multiaddr="/ip4/127.0.0.1/tcp/4025"
             )
