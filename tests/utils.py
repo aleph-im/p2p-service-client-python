@@ -28,8 +28,8 @@ async def make_client_from_config(
         # network DNS, which is unavailable out of Docker.
         mq_host="localhost",
         mq_port=rmq.get("port", DEFAULT_MQ_PORT),
-        mq_username=rmq.get("username", DEFAULT_MQ_USERNAME),
-        mq_password=rmq.get("password", DEFAULT_MQ_PASSWORD),
+        mq_username=rmq.get("username", "guest"),
+        mq_password=rmq.get("password", "guest"),
         mq_pub_exchange_name=rmq.get("pub_exchange", DEFAULT_PUB_EXCHANGE_NAME),
         mq_sub_exchange_name=rmq.get("sub_exchange", DEFAULT_SUB_EXCHANGE_NAME),
         # Use localhost, same reason as the MQ host.
